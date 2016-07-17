@@ -48,7 +48,7 @@ func TestNewDeck(t *testing.T) {
 	}
 }
 
-func TestUpateDeck(t *testing.T) {
+func TestUpdateDeck(t *testing.T) {
 	db, e := OpenDatabase(testDB)
 	defer db.Close()
 	if e != nil {
@@ -62,18 +62,18 @@ func TestUpateDeck(t *testing.T) {
 		ViewWeight: 3.0,
 		ViewLimit:  4,
 	}
-	if _, e = db.NewDeck(want.Name); e != nil {
+	if _, e := db.NewDeck(want.Name); e != nil {
 		t.Fatal(e)
 	}
 
-	if e = db.UpdateDeck(&want); e != nil {
+	if e := db.UpdateDeck(&want); e != nil {
 		t.Fatal(e)
 	}
 
 	row := db.QueryRow(`SELECT deck_id, name, date_weight, view_weight, view_limit
 FROM deck WHERE deck_id=?`, want.ID)
 	got := Deck{}
-	if e = row.Scan(&got.ID, &got.Name, &got.DateWeight, &got.ViewWeight, &got.ViewLimit); e != nil {
+	if e := row.Scan(&got.ID, &got.Name, &got.DateWeight, &got.ViewWeight, &got.ViewLimit); e != nil {
 		t.Fatal(e)
 	}
 
@@ -195,11 +195,11 @@ func TestUpdateCard(t *testing.T) {
 		Views:    1,
 		LastView: time.Now(),
 	}
-	if _, e = db.NewCard(); e != nil {
+	if _, e := db.NewCard(); e != nil {
 		t.Fatal(e)
 	}
 
-	if e = db.UpdateCard(&want); e != nil {
+	if e := db.UpdateCard(&want); e != nil {
 		t.Fatal(e)
 	}
 
@@ -207,7 +207,7 @@ func TestUpdateCard(t *testing.T) {
 SELECT card_id, front, back, views, last_view
 FROM card WHERE card_id=?`, want.ID)
 	got := Card{}
-	if e = row.Scan(&got.ID, &got.Front, &got.Back, &got.Views, &got.LastView); e != nil {
+	if e := row.Scan(&got.ID, &got.Front, &got.Back, &got.Views, &got.LastView); e != nil {
 		t.Fatal(e)
 	}
 

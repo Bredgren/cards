@@ -23,7 +23,7 @@ var handlers = map[string]http.HandlerFunc{
 	"/deck/edit/":   deckEditHandler,
 	"/deck/delete/": deckDeleteHandler,
 	// "/deck/study/":  deckStudyHandler,
-	// "/deck/":        deckHandler,
+	"/deck/": deckHandler,
 	// "/card/new/":    cardNewHandler,
 	// "/card/edit/":   cardEditHandler,
 	// "/card/delete/": cardDeleteHandler,
@@ -41,7 +41,7 @@ var tmpl = template.Must(template.New("tmpl").ParseFiles(
 	"./tmpl/editDeck.tmpl",
 	"./tmpl/delDeck.tmpl",
 	// "./tmpl/studyDeck.tmpl",
-	// "./tmpl/showDeck.tmpl",
+	"./tmpl/showDeck.tmpl",
 	// "./tmpl/newCard.tmpl",
 	// "./tmpl/editCard.tmpl",
 	// "./tmpl/delCard.tmpl",
@@ -284,59 +284,34 @@ func deckDeleteHandler(w http.ResponseWriter, r *http.Request) {
 // 		return
 // 	}
 // }
-//
-// func deckHandler(w http.ResponseWriter, r *http.Request) {
-// 	// Show settings and cards for a particular deck. If unspecified, redirect to root.
-// 	dbMtx.Lock()
-// 	defer dbMtx.Unlock()
-//
-// 	f, e := parseForm(r)
-// 	if e != nil {
-// 		log.Println(e)
-// 		http.NotFound(w, r)
-// 		return
-// 	}
-//
-// 	type cardInfo struct {
-// 		ID         int
-// 		Front      string
-// 		Back       string
-// 		LastViewed string
-// 	}
-// 	type deckInfo struct {
-// 		Name        string
-// 		DateWeight  float64
-// 		CountWeight float64
-// 		MaxViews    int
-// 		NumCards    int
-// 		Cards       []cardInfo
-// 	}
-//
-// 	deck := db.Decks[f.DeckName]
-// 	sort.Sort(carddb.CardsByID(deck.Cards))
-// 	data := deckInfo{
-// 		Name:        f.DeckName,
-// 		DateWeight:  deck.DateWeight,
-// 		CountWeight: deck.CountWeight,
-// 		MaxViews:    deck.MaxViews,
-// 		NumCards:    len(deck.Cards),
-// 		Cards:       make([]cardInfo, len(deck.Cards)),
-// 	}
-// 	for i, card := range deck.Cards {
-// 		data.Cards[i] = cardInfo{
-// 			ID:         card.ID,
-// 			Front:      card.Front,
-// 			Back:       card.Back,
-// 			LastViewed: card.LastView.Format("Mon Jan 2 15:04:05 2006"),
-// 		}
-// 	}
-//
-// 	if e := tmpl.ExecuteTemplate(w, "ShowDeck", data); e != nil {
-// 		internalError(w, e)
-// 		return
-// 	}
-// }
-//
+
+func deckHandler(w http.ResponseWriter, r *http.Request) {
+	// Show settings and cards for a particular deck. If unspecified, redirect to root.
+	form, e := parseForm(r)
+	if e != nil {
+		log.Println(e)
+		http.NotFound(w, r)
+		return
+	}
+
+	deck := db.GetDeck(form.Deck.ID)
+	cards, e := db.GetCards(deck.ID)
+	if e != nil {
+		internalError(w, e)
+		return
+	}
+	sort.Sort(carddb.CardsByID(cards))
+	// LastViewed: card.LastView.Format("Mon Jan 2 15:04:05 2006"),
+
+	if e := tmpl.ExecuteTemplate(w, "ShowDeck", struct {
+		Deck  *carddb.Deck
+		Cards []*carddb.Card
+	}{deck, cards}); e != nil {
+		internalError(w, e)
+		return
+	}
+}
+
 // func cardNewHandler(w http.ResponseWriter, r *http.Request) {
 // 	dbMtx.Lock()
 // 	defer dbMtx.Unlock()

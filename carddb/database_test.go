@@ -16,6 +16,11 @@ DROP TABLE IF EXISTS deck_card;
 ` + schema
 }
 
+func cardsEqual(c1, c2 *Card) bool {
+	return c1.ID == c2.ID || c1.Front == c2.Front || c1.Back == c2.Back ||
+		c1.Views == c2.Views || c1.LastView.Equal(c2.LastView)
+}
+
 func TestOpenDB(t *testing.T) {
 	db, e := OpenDatabase(testDB)
 	defer db.Close()
@@ -180,8 +185,7 @@ func TestNewCard(t *testing.T) {
 		t.Fatal(e)
 	}
 
-	if got.ID != want.ID || got.Front != want.Front || got.Back != want.Back ||
-		got.Views != want.Views || !got.LastView.Equal(want.LastView) {
+	if !cardsEqual(got, &want) {
 		t.Errorf("got: %#v want: %#v", *got, want)
 	}
 }
@@ -216,10 +220,7 @@ FROM card WHERE card_id=?`, want.ID)
 		t.Fatal(e)
 	}
 
-	t.Log(got, want)
-
-	if got.ID != want.ID || got.Front != want.Front || got.Back != want.Back ||
-		got.Views != want.Views || !got.LastView.Equal(want.LastView) {
+	if !cardsEqual(&got, &want) {
 		t.Errorf("got: %#v want: %#v", got, want)
 	}
 }
@@ -265,7 +266,7 @@ func TestGetCard(t *testing.T) {
 	}
 
 	c := db.GetCard(card1.ID)
-	if *c != *card1 {
+	if !cardsEqual(c, card1) {
 		t.Errorf("got: %#v wanted: %#v", *c, *card1)
 	}
 
@@ -298,7 +299,7 @@ func TestGetCard(t *testing.T) {
 	if e != nil {
 		t.Fatal(e)
 	}
-	if len(cs) != 1 && *cs[0] != *card1 {
+	if len(cs) != 1 && !cardsEqual(cs[0], card1) {
 		t.Errorf("got: %#v, wanted: %#v", cs, *card1)
 	}
 }
@@ -371,5 +372,46 @@ func TestDelCardToDeck(t *testing.T) {
 	var id int
 	if e = row.Scan(&id); e != sql.ErrNoRows {
 		t.Errorf("got: %v want: %v", e, sql.ErrNoRows)
+	}
+}
+
+func TestLastView(t *testing.T) {
+	db, e := OpenDatabase(testDB)
+	defer db.Close()
+	if e != nil {
+		t.Fatal(e)
+	}
+
+	lastView, e := time.ParseInLocation("2006-1-2 15:04:05", "1234-5-6 12:34:56", time.Local)
+	if e != nil {
+		t.Fatal(e)
+	}
+	c := Card{
+		ID:       1,
+		Front:    "Front",
+		Back:     "Back",
+		Views:    1,
+		LastView: lastView,
+	}
+	if _, e = db.NewCard(); e != nil {
+		t.Fatal(e)
+	}
+
+	if e = db.UpdateCard(&c); e != nil {
+		t.Fatal(e)
+	}
+
+	got := db.GetCard(c.ID)
+	if !got.LastView.Equal(c.LastView) {
+		t.Errorf("got: %#v wanted: %#v", got.LastView, c.LastView)
+	}
+
+	cs, e := db.GetCards(-1)
+	if e != nil {
+		t.Fatal(e)
+	}
+	got = cs[0]
+	if !got.LastView.Equal(c.LastView) {
+		t.Errorf("got: %#v, wanted: %#v", got.LastView, c.LastView)
 	}
 }

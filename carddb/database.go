@@ -194,9 +194,10 @@ func (db *Database) NewCard() (*Card, error) {
 	row := db.QueryRow(`
 SELECT card_id, front, back, views, last_view
 FROM card WHERE card_id=?`, id)
-	card := &Card{}
-	e = row.Scan(&card.ID, &card.Front, &card.Back, &card.Views, &card.LastView)
-	return card, e
+	c := &Card{}
+	e = row.Scan(&c.ID, &c.Front, &c.Back, &c.Views, &c.LastView)
+	c.LastView = c.LastView.Local()
+	return c, e
 }
 
 // UpdateCard updates the given card in the database to match its fields
@@ -240,10 +241,10 @@ func (db *Database) GetCard(cardID int) *Card {
 SELECT card_id, front, back, views, last_view
 FROM card WHERE card_id=?`, cardID)
 	c := &Card{}
-	e := row.Scan(&c.ID, &c.Front, &c.Back, &c.Views, &c.LastView)
-	if e != nil {
+	if e := row.Scan(&c.ID, &c.Front, &c.Back, &c.Views, &c.LastView); e != nil {
 		return nil
 	}
+	c.LastView = c.LastView.Local()
 	return c
 }
 
@@ -278,6 +279,7 @@ WHERE deck_id=?`, deckID)
 		if e = rows.Scan(&c.ID, &c.Front, &c.Back, &c.Views, &c.LastView); e != nil {
 			return nil, e
 		}
+		c.LastView = c.LastView.Local()
 		cs = append(cs, c)
 	}
 	return cs, nil
@@ -348,20 +350,20 @@ func (d DecksByName) Swap(i, j int) {
 	d[i], d[j] = d[j], d[i]
 }
 
-// // CardsByID sorts cards by their ID
-// type CardsByID []*Card
-//
-// // Len for sorting interface
-// func (c CardsByID) Len() int {
-// 	return len(c)
-// }
-//
-// // Less for sorting interface
-// func (c CardsByID) Less(i, j int) bool {
-// 	return c[i].ID < c[j].ID
-// }
-//
-// // Swap for sorting interface
-// func (c CardsByID) Swap(i, j int) {
-// 	c[i], c[j] = c[j], c[i]
-// }
+// CardsByID sorts cards by their ID
+type CardsByID []*Card
+
+// Len for sorting interface
+func (c CardsByID) Len() int {
+	return len(c)
+}
+
+// Less for sorting interface
+func (c CardsByID) Less(i, j int) bool {
+	return c[i].ID < c[j].ID
+}
+
+// Swap for sorting interface
+func (c CardsByID) Swap(i, j int) {
+	c[i], c[j] = c[j], c[i]
+}

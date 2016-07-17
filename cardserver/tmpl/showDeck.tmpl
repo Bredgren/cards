@@ -1,0 +1,30 @@
+{{define "ShowDeck"}}
+{{template "Header"}}
+<div class="all">
+  <div class="nav">
+    <a href="/">Home</a>
+  </div>
+  <div class="info">
+    <h1>{{.Deck.Name}}</h1>
+    <h3>Date Weight: {{.Deck.DateWeight}}</h3>
+    <h3>Count Weight: {{.Deck.ViewWeight}}</h3>
+    <h3>Max Views: {{.Deck.ViewLimit}}</h3>
+    <h3>Cards: {{len .Cards}}</h3>
+  </div>
+  <div class="options">
+    <a href="/deck/study/?d={{.Deck.ID}}">Study</a>
+    <a href="/deck/edit/?d={{.Deck.ID}}">Edit</a>
+    <a href="/card/new/?d={{.Deck.ID}}">New Card</a>
+  </div>
+  <ul>
+		{{range .Cards}}
+    <li>
+      {{.Front}} - {{.Back}}
+      <a href="/card/edit/?c={{.ID}}">Edit</a>
+      <a href="/card/delete/?c={{.ID}}">Delete</a>
+      {{.LastView}}
+    </li>
+    {{end}}
+  </ul>
+</div>
+{{end}}

@@ -1,0 +1,24 @@
+{{define "DelDeck"}}
+{{template "Header"}}
+<div class="all">
+  <div class="nav">
+    <a href="/">Cancel</a>
+  </div>
+  <p>
+    Press the button to delete deck '{{.Deck.Name}}'
+  </p>
+  <form method="post">
+    <button type="submit">Delete</button>
+  </form>
+</div>
+{{end}}
+
+{{define "DelDeckSuccess"}}
+{{template "Header"}}
+<div class="all">
+  <p>
+    Deck '{{.Deck.Name}}' deleted.
+  </p>
+  <a href="/">OK</a>
+</div>
+{{end}}

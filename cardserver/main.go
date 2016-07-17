@@ -19,9 +19,9 @@ var (
 )
 
 var handlers = map[string]http.HandlerFunc{
-	"/deck/new":   deckNewHandler,
-	"/deck/edit/": deckEditHandler,
-	// "/deck/delete/": deckDeleteHandler,
+	"/deck/new":     deckNewHandler,
+	"/deck/edit/":   deckEditHandler,
+	"/deck/delete/": deckDeleteHandler,
 	// "/deck/study/":  deckStudyHandler,
 	// "/deck/":        deckHandler,
 	// "/card/new/":    cardNewHandler,
@@ -39,7 +39,7 @@ var tmpl = template.Must(template.New("tmpl").ParseFiles(
 	"./tmpl/root.tmpl",
 	"./tmpl/newDeck.tmpl",
 	"./tmpl/editDeck.tmpl",
-	// "./tmpl/delDeck.tmpl",
+	"./tmpl/delDeck.tmpl",
 	// "./tmpl/studyDeck.tmpl",
 	// "./tmpl/showDeck.tmpl",
 	// "./tmpl/newCard.tmpl",
@@ -104,7 +104,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func deckNewHandler(w http.ResponseWriter, r *http.Request) {
 	// Show form for creating a new deck
-	if r.Method == "POST" {
+	if r.Method == http.MethodPost {
 		if e := r.ParseForm(); e != nil {
 			internalError(w, e)
 			return
@@ -164,7 +164,7 @@ func deckEditHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == "POST" {
+	if r.Method == http.MethodPost {
 		name := r.PostForm["name"][0]
 		dateWeight, e := strconv.ParseFloat(r.PostForm["dateWeight"][0], 64)
 		if e != nil {
@@ -203,43 +203,38 @@ func deckEditHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func deckDeleteHandler(w http.ResponseWriter, r *http.Request) {
-// 	// Show confirmation page for deleting deck
-// 	dbMtx.Lock()
-// 	defer dbMtx.Unlock()
-//
-// 	f, e := parseForm(r)
-// 	if e != nil {
-// 		log.Println(e)
-// 		http.NotFound(w, r)
-// 		return
-// 	}
-//
-// 	if r.Method == "POST" {
-// 		delete(db.Decks, f.DeckName)
-//
-// 		if e := db.SaveAs(dbFile); e != nil {
-// 			internalError(w, e)
-// 			return
-// 		}
-//
-// 		if e := tmpl.ExecuteTemplate(w, "DelDeckSuccess", struct {
-// 			Name string
-// 		}{f.DeckName}); e != nil {
-// 			internalError(w, e)
-// 			return
-// 		}
-// 		return
-// 	}
-//
-// 	if e := tmpl.ExecuteTemplate(w, "DelDeck", struct {
-// 		Name string
-// 	}{f.DeckName}); e != nil {
-// 		internalError(w, e)
-// 		return
-// 	}
-// }
-//
+func deckDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	// Show confirmation page for deleting deck
+	form, e := parseForm(r)
+	if e != nil {
+		log.Println(e)
+		http.NotFound(w, r)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		e := db.DelDeck(form.Deck.ID)
+		if e != nil {
+			internalError(w, e)
+		}
+
+		if e := tmpl.ExecuteTemplate(w, "DelDeckSuccess", struct {
+			Deck *carddb.Deck
+		}{form.Deck}); e != nil {
+			internalError(w, e)
+			return
+		}
+		return
+	}
+
+	if e := tmpl.ExecuteTemplate(w, "DelDeck", struct {
+		Deck *carddb.Deck
+	}{form.Deck}); e != nil {
+		internalError(w, e)
+		return
+	}
+}
+
 // func deckStudyHandler(w http.ResponseWriter, r *http.Request) {
 // 	dbMtx.Lock()
 // 	defer dbMtx.Unlock()

@@ -1,0 +1,37 @@
+{{define "EditDeck"}}
+{{template "Header"}}
+<div class="all">
+  <div class="nav">
+    <a href="/deck/?d={{.Deck.ID}}">Cancel</a>
+  </div>
+  <form method="post">
+    <div class="input-and-label">
+      <div class="input-label">Name</div>
+      <input type="text" name="name" value="{{.Deck.Name}}">
+    </div>
+    <div class="input-and-label">
+      <div class="input-label">Date Weight</div>
+      <input type="number" name="dateWeight" value="{{.Deck.DateWeight}}">
+    </div>
+    <div class="input-and-label">
+      <div class="input-label">View Weight</div>
+      <input type="number" name="viewWeight" value="{{.Deck.ViewWeight}}">
+    </div>
+    <div class="input-and-label">
+      <div class="input-label">Max Views</div>
+      <input type="number" step="1" name="viewLimit" value="{{.Deck.ViewLimit}}">
+    </div>
+    <button type="submit">Submit</button>
+  </form>
+</div>
+{{end}}
+
+{{define "EditDeckSuccess"}}
+{{template "Header"}}
+<div class="all">
+  <p>
+    Deck {{.Deck.Name}} updated successfully.
+  </p>
+  <a href="/deck/?d={{.Deck.ID}}">OK</a>
+</div>
+{{end}}

@@ -1,0 +1,49 @@
+{{define "NewDeck"}}
+{{template "Header"}}
+<div class="all">
+  <div class="nav">
+    <a href="/">Cancel</a>
+  </div>
+  <form method="post">
+    <div class="input-and-label">
+      <div class="input-label">Name</div>
+      <input type="text" name="name" value="NewDeck">
+    </div>
+    <div class="input-and-label">
+      <div class="input-label">Date Weight</div>
+      <input type="number" name="dateWeight" value="1.0">
+    </div>
+    <div class="input-and-label">
+      <div class="input-label">View Weight</div>
+      <input type="number" name="viewWeight" value="1.0">
+    </div>
+    <div class="input-and-label">
+      <div class="input-label">View Limit</div>
+      <input type="number" step="1" name="viewLimit" value="20">
+    </div>
+    <button type="submit">Submit</button>
+  </form>
+</div>
+{{end}}
+
+{{define "NewDeckSuccess"}}
+{{template "Header"}}
+<div class="all">
+  <p>
+    Deck {{.Deck.Name}} created successfully.
+  </p>
+  <a href="/">OK</a>
+	<a href="/deck/new">Add Another</a>
+</div>
+{{end}}
+
+{{define "NewDeckFail"}}
+{{template "Header"}}
+<div class="all">
+  <p>
+    Failed: {{.Error}}.
+  </p>
+  <a href="/">OK</a>
+	<a href="/deck/new">Add Another</a>
+</div>
+{{end}}

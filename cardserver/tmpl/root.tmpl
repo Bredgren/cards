@@ -1,0 +1,28 @@
+{{define "Header"}}
+<!DOCTYPE html>
+<head>
+	<title>Flash Cards</title>
+  <script src="http://code.jquery.com/jquery.min.js"></script>
+  <link href="/static/css/common.css" rel="stylesheet">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+{{end}}
+
+{{define "Root"}}
+{{template "Header"}}
+<div class="all">
+  <div class="options">
+  	<a href="/deck/new">New Deck</a>
+  </div>
+  <ul>
+		{{$numCards := .NumCards}}
+	 	{{range $i, $deck := .Decks}}
+    <li>
+      <a href="/deck/?d={{$deck.ID}}">{{$deck.Name}} ({{index $numCards $i}})</a>
+      <a href="/deck/edit/?d={{$deck.ID}}">Edit</a>
+      <a href="/deck/delete/?d={{$deck.ID}}">Delete</a>
+    </li>
+    {{end}}
+  </ul>
+</div>
+{{end}}

@@ -181,7 +181,7 @@ func TestNewCard(t *testing.T) {
 	}
 }
 
-func TestUpateCard(t *testing.T) {
+func TestUpdateCard(t *testing.T) {
 	db, e := OpenDatabase(testDB)
 	defer db.Close()
 	if e != nil {

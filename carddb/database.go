@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/Bredgren/wrand"
+
 	// For sqlite3 driver
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -24,6 +26,7 @@ CREATE TABLE IF NOT EXISTS card (
   front TEXT DEFAULT 'NewCard',
   back TEXT DEFAULT '',
   views INTEGER DEFAULT 0,
+	-- Datetime in UTC
   last_view DATETIME DEFAULT (DATETIME('0001-01-01 00:00:00'))
 );
 
@@ -270,35 +273,36 @@ WHERE deck_id=? AND card_id=?`, deckID, cardID)
 	return e
 }
 
-// // GetRandomCard return a random card from the deck. The probability of selection depends
-// // on the card's view count, last view time, and the decks weights for these. If the deck
-// // is empty it will return nil.
-// func (d *Deck) GetRandomCard() *Card {
-// 	if len(d.Cards) == 0 {
-// 		return nil
-// 	}
+// ViewCard logs a view of the card by updating the last view time to be now and
+// increments the view count.
+func (db *Database) ViewCard(card *Card) error {
+	card.LastView = time.Now()
+	card.Views++
+	return db.UpdateCard(card)
+}
 
-// 	now := time.Now().Truncate(time.Hour)
+// RandomCard return a random card from the deck. The probability of selection depends
+// on the card's view count, last view time, and the decks weights for these. If the deck
+// is empty it will return nil.
+func RandomCard(deck *Deck, cards []*Card) *Card {
+	if len(cards) == 0 {
+		return nil
+	}
 
-// 	weights := make([]float64, len(d.Cards))
-// 	for i, c := range d.Cards {
-// 		lastView := c.LastView.Truncate(time.Hour)
-// 		count := d.MaxViews - c.ViewCount
-// 		if count < 0 {
-// 			count = 0
-// 		}
-// 		weights[i] = now.Sub(lastView).Hours()*d.DateWeight + float64(count)*d.CountWeight
-// 	}
+	now := time.Now().Truncate(time.Hour)
 
-// 	return d.Cards[wrand.SelectIndex(weights)]
-// }
+	weights := make([]float64, len(cards))
+	for i, c := range cards {
+		lastView := c.LastView.Truncate(time.Hour)
+		count := deck.ViewLimit - c.Views
+		if count < 0 {
+			count = 0
+		}
+		weights[i] = now.Sub(lastView).Hours()*deck.DateWeight + float64(count)*deck.ViewWeight
+	}
 
-// // Update registers a view of the card by updating the last view time to be now and
-// // increments the view count.
-// func (c *Card) Update() {
-// 	c.LastView = time.Now()
-// 	c.ViewCount++
-// }
+	return cards[wrand.SelectIndex(weights)]
+}
 
 // // CardsByID sorts cards by their ID
 // type CardsByID []*Card

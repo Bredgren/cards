@@ -1,1 +1,3 @@
 *.db
+/carddb/debug
+debug.test

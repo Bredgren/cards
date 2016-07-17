@@ -130,6 +130,19 @@ WHERE deck_id=?`, deckID)
 	return e
 }
 
+// GetDeck returns the deck with the given ID, or nil if there is no such deck
+func (db *Database) GetDeck(deckID int) *Deck {
+	row := db.QueryRow(`
+SELECT deck_id, name, date_weight, view_weight, view_limit
+FROM deck WHERE deck_id=?`, deckID)
+	d := &Deck{}
+	e := row.Scan(&d.ID, &d.Name, &d.DateWeight, &d.ViewWeight, &d.ViewLimit)
+	if e != nil {
+		return nil
+	}
+	return d
+}
+
 // GetDecks returns all decks that contain the given card. cardID = 0 returns all decks
 // that contain no cards. deckID < 0 returns all decks.
 func (db *Database) GetDecks(cardID int) ([]*Deck, error) {
@@ -221,6 +234,19 @@ WHERE card_id=?`, cardID)
 	return e
 }
 
+// GetCard returns the card with the given ID, or nil if there is no such card
+func (db *Database) GetCard(cardID int) *Card {
+	row := db.QueryRow(`
+SELECT card_id, front, back, views, last_view
+FROM card WHERE card_id=?`, cardID)
+	c := &Card{}
+	e := row.Scan(&c.ID, &c.Front, &c.Back, &c.Views, &c.LastView)
+	if e != nil {
+		return nil
+	}
+	return c
+}
+
 // GetCards returns all cards in the given deck. deckID = 0 returns all cards that belong
 // to no deck. deckID < 0 returns all cards.
 func (db *Database) GetCards(deckID int) ([]*Card, error) {
@@ -302,6 +328,24 @@ func RandomCard(deck *Deck, cards []*Card) *Card {
 	}
 
 	return cards[wrand.SelectIndex(weights)]
+}
+
+// DecksByName sorts decks by their Name
+type DecksByName []*Deck
+
+// Len for sorting interface
+func (d DecksByName) Len() int {
+	return len(d)
+}
+
+// Less for sorting interface
+func (d DecksByName) Less(i, j int) bool {
+	return d[i].Name < d[j].Name
+}
+
+// Swap for sorting interface
+func (d DecksByName) Swap(i, j int) {
+	d[i], d[j] = d[j], d[i]
 }
 
 // // CardsByID sorts cards by their ID

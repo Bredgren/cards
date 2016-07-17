@@ -117,6 +117,11 @@ func TestGetDeck(t *testing.T) {
 		t.Fatal(e)
 	}
 
+	d := db.GetDeck(deck1.ID)
+	if *d != *deck1 {
+		t.Errorf("got: %#v wanted: %#v", *d, *deck1)
+	}
+
 	deck2, e := db.NewDeck("Deck2")
 	if e != nil {
 		t.Fatal(e)
@@ -257,6 +262,11 @@ func TestGetCard(t *testing.T) {
 	card1, e := db.NewCard()
 	if e != nil {
 		t.Fatal(e)
+	}
+
+	c := db.GetCard(card1.ID)
+	if *c != *card1 {
+		t.Errorf("got: %#v wanted: %#v", *c, *card1)
 	}
 
 	card2, e := db.NewCard()

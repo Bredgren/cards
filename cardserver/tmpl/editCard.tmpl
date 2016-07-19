@@ -1,0 +1,36 @@
+{{define "EditCard"}}
+{{template "Header"}}
+<div class="all">
+  <div class="nav">
+    <a href="/">Cancel</a>
+  </div>
+  <div class="info">
+    Last Viewed {{.Card.LastView}}
+  </div>
+  <form method="post">
+    <div class="input-and-label">
+      <div class="input-label">Front</div>
+      <input type="text" name="front" value="{{.Card.Front}}">
+    </div>
+    <div class="input-and-label">
+      <div class="input-label">Back</div>
+      <input type="text" name="back" value="{{.Card.Back}}">
+    </div>
+    <div class="input-and-label">
+      <div class="input-label">Views</div>
+      <input type="text" name="views" value="{{.Card.Views}}">
+    </div>
+    <button type="submit">Submit</button>
+  </form>
+</div>
+{{end}}
+
+{{define "EditCardSuccess"}}
+{{template "Header"}}
+<div class="all">
+  <p>
+    Card #{{.Card.ID}} updated successfully.
+  </p>
+  <a href="/">OK</a>
+</div>
+{{end}}

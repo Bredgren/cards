@@ -23,9 +23,9 @@ var handlers = map[string]http.HandlerFunc{
 	"/deck/edit/":   deckEditHandler,
 	"/deck/delete/": deckDeleteHandler,
 	// "/deck/study/":  deckStudyHandler,
-	"/deck/":     deckHandler,
-	"/card/new/": cardNewHandler,
-	// "/card/edit/":   cardEditHandler,
+	"/deck/":      deckHandler,
+	"/card/new/":  cardNewHandler,
+	"/card/edit/": cardEditHandler,
 	// "/card/delete/": cardDeleteHandler,
 	// "/card/":        cardHandler,
 	"/": rootHandler,
@@ -43,7 +43,7 @@ var tmpl = template.Must(template.New("tmpl").ParseFiles(
 	// "./tmpl/studyDeck.tmpl",
 	"./tmpl/showDeck.tmpl",
 	"./tmpl/newCard.tmpl",
-	// "./tmpl/editCard.tmpl",
+	"./tmpl/editCard.tmpl",
 	// "./tmpl/delCard.tmpl",
 	// "./tmpl/showCard.tmpl",
 ))
@@ -378,69 +378,54 @@ func cardNewHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func cardEditHandler(w http.ResponseWriter, r *http.Request) {
-// 	dbMtx.Lock()
-// 	defer dbMtx.Unlock()
-//
-// 	f, e := parseForm(r)
-// 	if e != nil || f.Card == nil {
-// 		if e != nil {
-// 			log.Println(e)
-// 		} else {
-// 			log.Printf("No card %s in deck '%s'\n", r.FormValue("c"), f.DeckName)
-// 		}
-// 		http.NotFound(w, r)
-// 		return
-// 	}
-//
-// 	if r.Method == "POST" {
-// 		front := r.PostForm["front"][0]
-// 		back := r.PostForm["back"][0]
-// 		viewCount, e := strconv.Atoi(r.PostForm["views"][0])
-// 		if e != nil {
-// 			internalError(w, e)
-//			return
-// 		}
-//
-// 		f.Card.Front = front
-// 		f.Card.Back = back
-// 		f.Card.ViewCount = viewCount
-//
-// 		if e := db.SaveAs(dbFile); e != nil {
-// 			internalError(w, e)
-// 			return
-// 		}
-//
-// 		if e := tmpl.ExecuteTemplate(w, "EditCardSuccess", struct {
-// 			ID       int
-// 			DeckName string
-// 		}{f.Card.ID, f.DeckName}); e != nil {
-// 			internalError(w, e)
-// 			return
-// 		}
-//
-// 		return
-// 	}
-//
-// 	type cardInfo struct {
-// 		DeckName    string
-// 		Front, Back string
-// 		ViewCount   int
-// 		LastViewed  string
-// 	}
-// 	data := cardInfo{
-// 		DeckName:   f.DeckName,
-// 		Front:      f.Card.Front,
-// 		Back:       f.Card.Back,
-// 		ViewCount:  f.Card.ViewCount,
-// 		LastViewed: f.Card.LastView.Format("Mon Jan 2 15:04:05 2006"),
-// 	}
-// 	if e := tmpl.ExecuteTemplate(w, "EditCard", data); e != nil {
-// 		internalError(w, e)
-//	  return
-// 	}
-// }
-//
+func cardEditHandler(w http.ResponseWriter, r *http.Request) {
+	form, e := parseForm(r)
+	if e != nil || form.Card == nil {
+		if e != nil {
+			log.Println(e)
+		} else {
+			log.Printf("No card with ID %s\n", r.FormValue("c"))
+		}
+		http.NotFound(w, r)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		front := r.PostForm["front"][0]
+		back := r.PostForm["back"][0]
+		views, e := strconv.Atoi(r.PostForm["views"][0])
+		if e != nil {
+			internalError(w, e)
+			return
+		}
+
+		form.Card.Front = front
+		form.Card.Back = back
+		form.Card.Views = views
+
+		if e := db.UpdateCard(form.Card); e != nil {
+			internalError(w, e)
+			return
+		}
+
+		if e := tmpl.ExecuteTemplate(w, "EditCardSuccess", struct {
+			Card *carddb.Card
+		}{form.Card}); e != nil {
+			internalError(w, e)
+			return
+		}
+
+		return
+	}
+
+	if e := tmpl.ExecuteTemplate(w, "EditCard", struct {
+		Card *carddb.Card
+	}{form.Card}); e != nil {
+		internalError(w, e)
+		return
+	}
+}
+
 // func cardDeleteHandler(w http.ResponseWriter, r *http.Request) {
 // 	dbMtx.Lock()
 // 	defer dbMtx.Unlock()

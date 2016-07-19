@@ -22,7 +22,7 @@ var handlers = map[string]http.HandlerFunc{
 	"/deck/new":     deckNewHandler,
 	"/deck/edit/":   deckEditHandler,
 	"/deck/delete/": deckDeleteHandler,
-	// "/deck/study/":  deckStudyHandler,
+	"/deck/study/":  deckStudyHandler,
 	"/deck/":        deckHandler,
 	"/card/new/":    cardNewHandler,
 	"/card/edit/":   cardEditHandler,
@@ -40,7 +40,7 @@ var tmpl = template.Must(template.New("tmpl").ParseFiles(
 	"./tmpl/newDeck.tmpl",
 	"./tmpl/editDeck.tmpl",
 	"./tmpl/delDeck.tmpl",
-	// "./tmpl/studyDeck.tmpl",
+	"./tmpl/studyDeck.tmpl",
 	"./tmpl/showDeck.tmpl",
 	"./tmpl/newCard.tmpl",
 	"./tmpl/editCard.tmpl",
@@ -245,55 +245,43 @@ func deckDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func deckStudyHandler(w http.ResponseWriter, r *http.Request) {
-// 	dbMtx.Lock()
-// 	defer dbMtx.Unlock()
-//
-// 	f, e := parseForm(r)
-// 	if e != nil {
-// 		log.Println(e)
-// 		http.NotFound(w, r)
-// 		return
-// 	}
-//
-// 	if f.Card == nil {
-// 		randCard := db.Decks[f.DeckName].GetRandomCard()
-// 		randCard.Update()
-// 		if e := db.SaveAs(dbFile); e != nil {
-// 			internalError(w, e)
-// 			return
-// 		}
-// 		http.Redirect(w, r, fmt.Sprintf("/deck/study/?d=%s&c=%d", f.DeckName, randCard.ID), http.StatusFound)
-// 		return
-// 	}
-//
-// 	if f.DV != 0 {
-// 		f.Card.ViewCount += f.DV
-// 		if e := db.SaveAs(dbFile); e != nil {
-// 			internalError(w, e)
-// 			return
-// 		}
-// 		http.Redirect(w, r, fmt.Sprintf("/deck/study/?d=%s&c=%d", f.DeckName, f.Card.ID), http.StatusFound)
-// 		return
-// 	}
-//
-// 	if e := tmpl.ExecuteTemplate(w, "Study", struct {
-// 		DeckName string
-// 		ID       int
-// 		Views    int
-// 		Front    string
-// 		Back     string
-// 	}{
-// 		DeckName: f.DeckName,
-// 		ID:       f.Card.ID,
-// 		Views:    f.Card.ViewCount,
-// 		Front:    f.Card.Front,
-// 		Back:     f.Card.Back,
-// 	}); e != nil {
-// 		internalError(w, e)
-// 		return
-// 	}
-// }
+func deckStudyHandler(w http.ResponseWriter, r *http.Request) {
+	form, e := parseForm(r)
+	if e != nil || form.Deck == nil {
+		if e != nil {
+			log.Println(e)
+		}
+		http.NotFound(w, r)
+		return
+	}
+
+	if form.Card == nil {
+		cards, e := db.GetCards(form.Deck.ID)
+		if e != nil {
+			internalError(w, e)
+			return
+		}
+		randCard := carddb.RandomCard(form.Deck, cards)
+		db.ViewCard(randCard)
+		http.Redirect(w, r, fmt.Sprintf("/deck/study/?d=%d&c=%d", form.Deck.ID, randCard.ID), http.StatusFound)
+		return
+	}
+
+	if form.DV != 0 {
+		form.Card.Views += form.DV
+		db.UpdateCard(form.Card)
+		http.Redirect(w, r, fmt.Sprintf("/deck/study/?d=%d&c=%d", form.Deck.ID, form.Card.ID), http.StatusFound)
+		return
+	}
+
+	if e := tmpl.ExecuteTemplate(w, "Study", struct {
+		Deck *carddb.Deck
+		Card *carddb.Card
+	}{form.Deck, form.Card}); e != nil {
+		internalError(w, e)
+		return
+	}
+}
 
 func deckHandler(w http.ResponseWriter, r *http.Request) {
 	// Show settings and cards for a particular deck. If unspecified, redirect to root.

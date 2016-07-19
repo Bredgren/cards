@@ -1,0 +1,21 @@
+{{define "ShowCard"}}
+{{template "Header"}}
+<div class="all">
+  <div class="nav">
+    <a href="/">Home</a>
+  </div>
+  <div class="options">
+    <a href="/card/new/">New Card</a>
+  </div>
+  <ul>
+	 {{range .Cards}}
+    <li>
+      {{.Front}} - {{.Back}}
+      <a href="/card/edit/?c={{.ID}}">Edit</a>
+      <a href="/card/delete/?c={{.ID}}">Delete</a>
+      {{.LastView}}
+    </li>
+    {{end}}
+  </ul>
+</div>
+{{end}}

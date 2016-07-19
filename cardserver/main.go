@@ -27,8 +27,8 @@ var handlers = map[string]http.HandlerFunc{
 	"/card/new/":    cardNewHandler,
 	"/card/edit/":   cardEditHandler,
 	"/card/delete/": cardDeleteHandler,
-	// "/card/":        cardHandler,
-	"/": rootHandler,
+	"/card/":        cardHandler,
+	"/":             rootHandler,
 }
 
 var (
@@ -45,7 +45,7 @@ var tmpl = template.Must(template.New("tmpl").ParseFiles(
 	"./tmpl/newCard.tmpl",
 	"./tmpl/editCard.tmpl",
 	"./tmpl/delCard.tmpl",
-	// "./tmpl/showCard.tmpl",
+	"./tmpl/showCard.tmpl",
 ))
 
 func main() {
@@ -452,6 +452,23 @@ func cardDeleteHandler(w http.ResponseWriter, r *http.Request) {
 	if e := tmpl.ExecuteTemplate(w, "DelCard", struct {
 		Card *carddb.Card
 	}{form.Card}); e != nil {
+		internalError(w, e)
+		return
+	}
+}
+
+func cardHandler(w http.ResponseWriter, r *http.Request) {
+	cards, e := db.GetCards(-1)
+	if e != nil {
+		internalError(w, e)
+		return
+	}
+	sort.Sort(carddb.CardsByID(cards))
+	// LastViewed: card.LastView.Format("Mon Jan 2 15:04:05 2006"),
+
+	if e := tmpl.ExecuteTemplate(w, "ShowCard", struct {
+		Cards []*carddb.Card
+	}{cards}); e != nil {
 		internalError(w, e)
 		return
 	}

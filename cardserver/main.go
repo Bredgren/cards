@@ -23,10 +23,10 @@ var handlers = map[string]http.HandlerFunc{
 	"/deck/edit/":   deckEditHandler,
 	"/deck/delete/": deckDeleteHandler,
 	// "/deck/study/":  deckStudyHandler,
-	"/deck/":      deckHandler,
-	"/card/new/":  cardNewHandler,
-	"/card/edit/": cardEditHandler,
-	// "/card/delete/": cardDeleteHandler,
+	"/deck/":        deckHandler,
+	"/card/new/":    cardNewHandler,
+	"/card/edit/":   cardEditHandler,
+	"/card/delete/": cardDeleteHandler,
 	// "/card/":        cardHandler,
 	"/": rootHandler,
 }
@@ -44,7 +44,7 @@ var tmpl = template.Must(template.New("tmpl").ParseFiles(
 	"./tmpl/showDeck.tmpl",
 	"./tmpl/newCard.tmpl",
 	"./tmpl/editCard.tmpl",
-	// "./tmpl/delCard.tmpl",
+	"./tmpl/delCard.tmpl",
 	// "./tmpl/showCard.tmpl",
 ))
 
@@ -426,46 +426,36 @@ func cardEditHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func cardDeleteHandler(w http.ResponseWriter, r *http.Request) {
-// 	dbMtx.Lock()
-// 	defer dbMtx.Unlock()
-//
-// 	f, e := parseForm(r)
-// 	if e != nil || f.Card == nil {
-// 		log.Println(e)
-// 		http.NotFound(w, r)
-// 		return
-// 	}
-//
-// 	if r.Method == "POST" {
-// 		if e := db.Decks[f.DeckName].DelCard(f.Card.ID); e != nil {
-// 			internalError(w, e)
-// 			return
-// 		}
-//
-// 		if e := db.SaveAs(dbFile); e != nil {
-// 			internalError(w, e)
-// 			return
-// 		}
-//
-// 		if e := tmpl.ExecuteTemplate(w, "DelCardSuccess", struct {
-// 			ID       int
-// 			DeckName string
-// 		}{f.Card.ID, f.DeckName}); e != nil {
-// 			internalError(w, e)
-// 			return
-// 		}
-// 		return
-// 	}
-//
-// 	if e := tmpl.ExecuteTemplate(w, "DelCard", struct {
-// 		ID       int
-// 		DeckName string
-// 	}{f.Card.ID, f.DeckName}); e != nil {
-// 		internalError(w, e)
-// 		return
-// 	}
-// }
+func cardDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	form, e := parseForm(r)
+	if e != nil || form.Card == nil {
+		log.Println(e)
+		http.NotFound(w, r)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		if e := db.DelCard(form.Card.ID); e != nil {
+			internalError(w, e)
+			return
+		}
+
+		if e := tmpl.ExecuteTemplate(w, "DelCardSuccess", struct {
+			Card *carddb.Card
+		}{form.Card}); e != nil {
+			internalError(w, e)
+			return
+		}
+		return
+	}
+
+	if e := tmpl.ExecuteTemplate(w, "DelCard", struct {
+		Card *carddb.Card
+	}{form.Card}); e != nil {
+		internalError(w, e)
+		return
+	}
+}
 
 func internalError(w http.ResponseWriter, e error) {
 	log.Println(e)

@@ -1,0 +1,24 @@
+{{define "DelCard"}}
+{{template "Header"}}
+<div class="all">
+  <div class="nav">
+    <a href="/">Cancel</a>
+  </div>
+  <p>
+    Press the button to delete card #{{.Card.ID}}.
+  </p>
+  <form method="post">
+    <button type="submit">Delete</button>
+  </form>
+</div>
+{{end}}
+
+{{define "DelCardSuccess"}}
+{{template "Header"}}
+<div class="all">
+  <p>
+    Card {{.Card.ID}} deleted.
+  </p>
+  <a href="/">OK</a>
+</div>
+{{end}}

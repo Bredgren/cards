@@ -1,0 +1,29 @@
+{{define "NewCard"}}
+{{template "Header"}}
+<div class="all">
+  <div class="nav">
+    <a href="/deck/{{if .Deck}}?d={{.Deck.ID}}{{end}}">Cancel</a>
+  </div>
+  <form method="post">
+    <div class="input-and-label">
+      <div class="input-label">Front</div>
+      <input type="text" name="front" value="">
+    </div>
+    <div class="input-and-label">
+      <div class="input-label">Back</div>
+      <input type="text" name="back" value="">
+    </div>
+    <button type="submit">Submit</button>
+  </form>
+</div>
+{{end}}
+
+{{define "NewCardSuccess"}}
+{{template "Header"}}
+<div class="all">
+  <p>
+    Card #{{.Card.ID}} {{if .Deck}}for deck '{{.Deck.Name}}'{{end}} created successfully.
+  </p>
+  <a href="/deck/{{if .Deck}}?d={{.Deck.ID}}{{end}}">OK</a>
+</div>
+{{end}}

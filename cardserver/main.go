@@ -23,8 +23,8 @@ var handlers = map[string]http.HandlerFunc{
 	"/deck/edit/":   deckEditHandler,
 	"/deck/delete/": deckDeleteHandler,
 	// "/deck/study/":  deckStudyHandler,
-	"/deck/": deckHandler,
-	// "/card/new/":    cardNewHandler,
+	"/deck/":     deckHandler,
+	"/card/new/": cardNewHandler,
 	// "/card/edit/":   cardEditHandler,
 	// "/card/delete/": cardDeleteHandler,
 	// "/card/":        cardHandler,
@@ -42,7 +42,7 @@ var tmpl = template.Must(template.New("tmpl").ParseFiles(
 	"./tmpl/delDeck.tmpl",
 	// "./tmpl/studyDeck.tmpl",
 	"./tmpl/showDeck.tmpl",
-	// "./tmpl/newCard.tmpl",
+	"./tmpl/newCard.tmpl",
 	// "./tmpl/editCard.tmpl",
 	// "./tmpl/delCard.tmpl",
 	// "./tmpl/showCard.tmpl",
@@ -113,14 +113,17 @@ func deckNewHandler(w http.ResponseWriter, r *http.Request) {
 		dateWeight, e := strconv.ParseFloat(r.PostForm["dateWeight"][0], 64)
 		if e != nil {
 			internalError(w, e)
+			return
 		}
 		viewWeight, e := strconv.ParseFloat(r.PostForm["viewWeight"][0], 64)
 		if e != nil {
 			internalError(w, e)
+			return
 		}
 		viewLimit, e := strconv.Atoi(r.PostForm["viewLimit"][0])
 		if e != nil {
 			internalError(w, e)
+			return
 		}
 
 		deck, e := db.NewDeck(name)
@@ -131,6 +134,7 @@ func deckNewHandler(w http.ResponseWriter, r *http.Request) {
 				Error string
 			}{name, e.Error()}); e != nil {
 				internalError(w, e)
+				return
 			}
 			return
 		}
@@ -152,6 +156,7 @@ func deckNewHandler(w http.ResponseWriter, r *http.Request) {
 
 	if e := tmpl.ExecuteTemplate(w, "NewDeck", nil); e != nil {
 		internalError(w, e)
+		return
 	}
 }
 
@@ -169,14 +174,17 @@ func deckEditHandler(w http.ResponseWriter, r *http.Request) {
 		dateWeight, e := strconv.ParseFloat(r.PostForm["dateWeight"][0], 64)
 		if e != nil {
 			internalError(w, e)
+			return
 		}
 		viewWeight, e := strconv.ParseFloat(r.PostForm["viewWeight"][0], 64)
 		if e != nil {
 			internalError(w, e)
+			return
 		}
 		viewLimit, e := strconv.Atoi(r.PostForm["viewLimit"][0])
 		if e != nil {
 			internalError(w, e)
+			return
 		}
 
 		form.Deck.Name = name
@@ -216,6 +224,7 @@ func deckDeleteHandler(w http.ResponseWriter, r *http.Request) {
 		e := db.DelDeck(form.Deck.ID)
 		if e != nil {
 			internalError(w, e)
+			return
 		}
 
 		if e := tmpl.ExecuteTemplate(w, "DelDeckSuccess", struct {
@@ -224,6 +233,7 @@ func deckDeleteHandler(w http.ResponseWriter, r *http.Request) {
 			internalError(w, e)
 			return
 		}
+
 		return
 	}
 
@@ -294,6 +304,11 @@ func deckHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if form.Deck == nil {
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+
 	deck := db.GetDeck(form.Deck.ID)
 	cards, e := db.GetCards(deck.ID)
 	if e != nil {
@@ -312,46 +327,57 @@ func deckHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// func cardNewHandler(w http.ResponseWriter, r *http.Request) {
-// 	dbMtx.Lock()
-// 	defer dbMtx.Unlock()
-//
-// 	f, e := parseForm(r)
-// 	if e != nil {
-// 		log.Println(e)
-// 		http.NotFound(w, r)
-// 		return
-// 	}
-//
-// 	if r.Method == "POST" {
-// 		front := r.PostForm["front"][0]
-// 		back := r.PostForm["back"][0]
-//
-// 		card := db.Decks[f.DeckName].NewCard(front, back)
-//
-// 		if e := db.SaveAs(dbFile); e != nil {
-// 			internalError(w, e)
-// 			return
-// 		}
-//
-// 		if e := tmpl.ExecuteTemplate(w, "NewCardSuccess", struct {
-// 			ID       int
-// 			DeckName string
-// 		}{card.ID, f.DeckName}); e != nil {
-// 			internalError(w, e)
-// 			return
-// 		}
-//
-// 		return
-// 	}
-//
-// 	if e := tmpl.ExecuteTemplate(w, "NewCard", struct {
-// 		DeckName string
-// 	}{f.DeckName}); e != nil {
-// 		internalError(w, e)
-// 	}
-// }
-//
+func cardNewHandler(w http.ResponseWriter, r *http.Request) {
+	form, e := parseForm(r)
+	if e != nil {
+		log.Println(e)
+		http.NotFound(w, r)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		front := r.PostForm["front"][0]
+		back := r.PostForm["back"][0]
+
+		card, e := db.NewCard()
+		if e != nil {
+			internalError(w, e)
+			return
+		}
+
+		card.Front = front
+		card.Back = back
+		if e := db.UpdateCard(card); e != nil {
+			internalError(w, e)
+			return
+		}
+
+		if form.Deck != nil {
+			if e := db.AddCardToDeck(card.ID, form.Deck.ID); e != nil {
+				internalError(w, e)
+				return
+			}
+		}
+
+		if e := tmpl.ExecuteTemplate(w, "NewCardSuccess", struct {
+			Deck *carddb.Deck
+			Card *carddb.Card
+		}{form.Deck, card}); e != nil {
+			internalError(w, e)
+			return
+		}
+
+		return
+	}
+
+	if e := tmpl.ExecuteTemplate(w, "NewCard", struct {
+		Deck *carddb.Deck
+	}{form.Deck}); e != nil {
+		internalError(w, e)
+		return
+	}
+}
+
 // func cardEditHandler(w http.ResponseWriter, r *http.Request) {
 // 	dbMtx.Lock()
 // 	defer dbMtx.Unlock()
@@ -373,6 +399,7 @@ func deckHandler(w http.ResponseWriter, r *http.Request) {
 // 		viewCount, e := strconv.Atoi(r.PostForm["views"][0])
 // 		if e != nil {
 // 			internalError(w, e)
+//			return
 // 		}
 //
 // 		f.Card.Front = front
@@ -410,6 +437,7 @@ func deckHandler(w http.ResponseWriter, r *http.Request) {
 // 	}
 // 	if e := tmpl.ExecuteTemplate(w, "EditCard", data); e != nil {
 // 		internalError(w, e)
+//	  return
 // 	}
 // }
 //

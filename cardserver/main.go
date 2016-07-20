@@ -142,7 +142,10 @@ func deckNewHandler(w http.ResponseWriter, r *http.Request) {
 		deck.DateWeight = dateWeight
 		deck.ViewWeight = viewWeight
 		deck.ViewLimit = viewLimit
-		db.UpdateDeck(deck)
+		if e := db.UpdateDeck(deck); e != nil {
+			internalError(w, e)
+			return
+		}
 
 		if e := tmpl.ExecuteTemplate(w, "NewDeckSuccess", struct {
 			Deck *carddb.Deck
